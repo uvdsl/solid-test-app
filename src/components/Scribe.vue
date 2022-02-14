@@ -1,11 +1,6 @@
 <template>
   <div class="p-grid">
-    <!-- <div class="p-col-1">
-      <Button class="p-button-outlined p-button-rounded" @click="back"> <i class="pi pi-arrow-left" /> </Button>
-    </div>
-    <div class="p-inputgroup p-col-6 p-offset-2"> -->
-       <div class="p-inputgroup p-col-6 p-offset-3">
-      <!-- list go here -->
+    <div class="p-inputgroup p-col-6 p-offset-3">
       <InputText
         placeholder="The URI of the Resource to do actions on."
         v-model="uri"
@@ -31,7 +26,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, toRefs } from "vue";
+import { defineComponent, ref, computed } from "vue";
 import { useSolidSession } from "@/composables/useSolidSession";
 
 import { useToast } from "primevue/usetoast";
@@ -40,20 +35,15 @@ import {
   deleteResource,
   getResource,
   parseToN3,
+  postResource,
 } from "@/lib/solidRequests";
-
 
 export default defineComponent({
   name: "Scribe",
-  components: { },
-  emits: ["back"],
-  setup(props, context) {
+  components: {},
+  setup() {
     const toast = useToast();
-    const { authFetch, sessionInfo } = useSolidSession();
-    const { webId } = toRefs(sessionInfo);
-    const displayKeyDialog = ref(false);
-    // const n3Store = ref();
-    // const n3Prefixes = ref();
+    const { authFetch } = useSolidSession();
 
     // uri of the information resource
     const uri = ref("");
@@ -94,36 +84,10 @@ export default defineComponent({
         .finally(() => (content.value = txt));
     };
 
-    const resumeSaveAction = async (key: {
-      uri: string;
-      label: string;
-      pubKeyLoc: string;
-      jwk: string;
-    }) => {
-      displayKeyDialog.value = false;
-      putResource(uri.value, content.value, authFetch.value)
-        .then(() =>
-          toast.add({
-            severity: "success",
-            summary: "Successful Save!",
-            detail: "The resource has been put at the URI.",
-            life: 5000,
-          })
-        )
-        .catch((err) =>
-          toast.add({
-            severity: "error",
-            summary: "Error on save!",
-            detail: err,
-            life: 5000,
-          })
-        );
-    };
-
     // Speeddial
     const speedDialActions = [
       {
-        label: "Save Resource",
+        label: "PUT Resource",
         icon: "pi pi-save",
         tooltipOptions: "left",
         command: async () => {
@@ -141,7 +105,40 @@ export default defineComponent({
               toast.add({
                 severity: "success",
                 summary: "Successful Save!",
-                detail: "The workflow has been put at the URI.",
+                detail: "The resource has been PUT at the URI.",
+                life: 5000,
+              })
+            )
+            .catch((err) =>
+              toast.add({
+                severity: "error",
+                summary: "Error on save!",
+                detail: err,
+                life: 5000,
+              })
+            );
+        },
+      },
+      {
+        label: "POST Resource",
+        icon: "pi pi-envelope",
+        tooltipOptions: "left",
+        command: async () => {
+          if (!isHTTP.value) {
+            toast.add({
+              severity: "error",
+              summary: "Missing URI to save at!",
+              detail: "Specify a HTTP-URI in the search bar.",
+              life: 5000,
+            });
+            return;
+          }
+          postResource(uri.value, undefined, content.value, authFetch.value)
+            .then(() =>
+              toast.add({
+                severity: "success",
+                summary: "Successful Save!",
+                detail: "The resource has been posted to the container URI.",
                 life: 5000,
               })
             )
@@ -213,20 +210,11 @@ export default defineComponent({
       },
     ];
 
-    const requestCryptoKey = () => {
-      displayKeyDialog.value = true;
-    };
-
-    const back = () => {
-      context.emit("back");
-    };
     return {
-      resumeSaveAction,
       uri,
       fetch,
       content,
       speedDialActions,
-      back,
     };
   },
 });
