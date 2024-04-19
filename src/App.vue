@@ -7,15 +7,16 @@
   <router-view />
 </template>
 
-<script lang="ts">
-import { defineComponent } from "vue";
+<script setup lang="ts">
 import HeaderBar from "@/components/standard/HeaderBar.vue";
-export default defineComponent({
-  name: "Home",
-  components: {
-    HeaderBar,
-  },
-});
+import { onSessionRestore } from "@inrupt/solid-client-authn-browser";
+import { useSolidSession } from "@/composables/useSolidSession";
+import router from "./router";
+
+// bring user back to the current location
+onSessionRestore((url) => router.push(`/${url.split("://")[1].split("/")[1]}`));
+// re-use Solid session
+useSolidSession().restoreSession();
 </script>
 
 <style lang="scss">
