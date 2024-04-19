@@ -1,25 +1,15 @@
-import { reactive, computed } from "vue";
-import { ISessionInfo, Session } from "@inrupt/solid-client-authn-browser";
+import { computed, reactive } from "vue";
+import {
+  ISessionInfo,
+  getDefaultSession,
+} from "@inrupt/solid-client-authn-browser";
 
-const session = reactive(new Session());
+const session = reactive(getDefaultSession());
 const sessionInfo = reactive({
   sessionId: session.info.sessionId,
   isLoggedIn: false,
   webId: undefined,
 } as ISessionInfo);
-
-// restorePreviousSession -> onSessionRestore((url) => { router.push(url) }); // to set user to current page and not initial page
-session.handleIncomingRedirect({ url: window.location.href, restorePreviousSession: true }).then((info) => {
-  if (info) {
-    sessionInfo.sessionId = info.sessionId;
-    sessionInfo.isLoggedIn = info.isLoggedIn;
-    sessionInfo.webId = info.webId;
-  } else {
-    sessionInfo.sessionId = session.info.sessionId;
-    sessionInfo.isLoggedIn = false;
-    sessionInfo.webId = undefined;
-  }
-});
 
 /**
  * Login :)
@@ -27,11 +17,42 @@ session.handleIncomingRedirect({ url: window.location.href, restorePreviousSessi
 async function login(idp: string) {
   if (!session.info.isLoggedIn) {
     await session.login({
-      oidcIssuer: idp , // eg "https://inrupt.net"
+      oidcIssuer: idp, // eg "https://inrupt.net"
       redirectUrl: window.location.href,
-      popUp: false // Popup login is not implemented yet
     });
   }
+}
+
+/**
+ * Auto-re-login
+ * 
+ * Use in App.vue like this
+ * ```ts
+    // bring user back to the current location
+    onSessionRestore((url) =>
+      router.push(`/${url.split("://")[1].split("/")[1]}`)
+    );
+    // re-use Solid session
+    useSolidSession().restoreSession();
+   ```
+ */
+function restoreSession() {
+  session
+    .handleIncomingRedirect({
+      url: window.location.href,
+      restorePreviousSession: true,
+    })
+    .then((info) => {
+      if (info) {
+        sessionInfo.sessionId = info.sessionId;
+        sessionInfo.isLoggedIn = info.isLoggedIn;
+        sessionInfo.webId = info.webId;
+      } else {
+        sessionInfo.sessionId = session.info.sessionId;
+        sessionInfo.isLoggedIn = false;
+        sessionInfo.webId = undefined;
+      }
+    });
 }
 
 /**
@@ -43,7 +64,6 @@ async function logout() {
     sessionInfo.isLoggedIn = false;
     sessionInfo.webId = undefined;
   });
-
 }
 
 const authFetch = computed(() => {
@@ -52,9 +72,9 @@ const authFetch = computed(() => {
 
 export const useSolidSession = () => {
   return {
-    // session, // no reactive !!!
     authFetch,
     login,
+    restoreSession,
     logout,
     sessionInfo,
   };

@@ -8,7 +8,7 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@inrupt/solid-client-authn-browser": "^1.7.2",
+    "@inrupt/solid-client-authn-browser": "^1.12.2",
     "@types/n3": "^1.10.2",
     "canonrdf": "0.0.2",
     "core-js": "^3.6.5",
