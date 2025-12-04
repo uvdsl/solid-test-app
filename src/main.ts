@@ -1,51 +1,111 @@
-import { createApp } from "vue";
-import App from "./App.vue";
-// import "./registerServiceWorker";
-import router from "./router";
-import PrimeVue from "primevue/config";
+import { createApp } from 'vue'
+import App from './App.vue'
+
+import "./registerServiceWorker";
+
+import PrimeVue from 'primevue/config';
+import Aura from '@primevue/themes/aura';
+import "primeicons/primeicons.css";
+import 'primeflex/primeflex.css';
+
 import Button from "primevue/button";
-import Toolbar from "primevue/toolbar";
-import Avatar from "primevue/avatar";
-import Card from "primevue/card";
-import InputSwitch from "primevue/inputswitch";
-import InputText from "primevue/inputtext";
-import RadioButton from "primevue/radiobutton";
-import Textarea from "primevue/textarea";
-import Listbox from 'primevue/listbox';
-import Dialog from "primevue/dialog";
-import SpeedDial from "primevue/speeddial";
-import Toast from "primevue/toast";
-import ProgressBar from 'primevue/progressbar';
-// import Sidebar from "primevue/sidebar";
+import SelectButton from 'primevue/selectbutton';
+import Checkbox from 'primevue/checkbox';
+import InputText from 'primevue/inputtext';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
+import Textarea from 'primevue/textarea';
+import Divider from 'primevue/divider';
+import Dialog from 'primevue/dialog';
+import Card from 'primevue/card';
+import Chip from 'primevue/chip';
+import Panel from 'primevue/panel';
+import Skeleton from 'primevue/skeleton';
+import Avatar from 'primevue/avatar';
+import Accordion from 'primevue/accordion';
+import AccordionPanel from 'primevue/accordionpanel';
+import AccordionHeader from 'primevue/accordionheader';
+import AccordionContent from 'primevue/accordioncontent';
+import Fieldset from 'primevue/fieldset';
+import SpeedDial from 'primevue/speeddial';
 
-import Tooltip from "primevue/tooltip";
-import ToastService from "primevue/toastservice";
 
-import "primeflex/primeflex.css"; // layouts
-import "primevue/resources/themes/vela-green/theme.css"; // theme
-import "primevue/resources/primevue.min.css"; // core css
-import "primeicons/primeicons.css"; // icons
+import ConfirmDialog from 'primevue/confirmdialog';
+import ConfirmationService from 'primevue/confirmationservice';
+
+
+import Toast from 'primevue/toast';
+import ToastService from 'primevue/toastservice';
+
+import Tooltip from 'primevue/tooltip';
+
+import { definePreset } from '@primevue/themes';
 
 const app = createApp(App);
-app.use(router);
-app.use(PrimeVue, { ripple: true });
+
+const SolidAura = definePreset(Aura, {
+    semantic: {
+        primary: {
+            50: '{violet.50}',
+            100: '{violet.100}',
+            200: '{violet.200}',
+            300: '{violet.300}',
+            400: '{violet.400}',
+            500: '{violet.500}',
+            600: '{violet.600}',
+            700: '{violet.700}',
+            800: '{violet.800}',
+            900: '{violet.900}',
+            950: '{violet.950}'
+        },
+        surface: {
+            50: '{zinc.50}',
+            100: '{zinc.100}',
+            200: '{zinc.200}',
+            300: '{zinc.300}',
+            400: '{zinc.400}',
+            500: '{zinc.500}',
+            600: '{zinc.600}',
+            700: '{zinc.700}',
+            800: '{zinc.800}',
+            900: '{zinc.900}',
+            950: '{zinc.950}'
+        }
+    }
+});
+
+app.use(PrimeVue, {
+    theme: {
+        preset: SolidAura,
+    }
+});
+app.component('Button', Button);
+app.component('SelectButton', SelectButton);
+app.component('Checkbox', Checkbox);
+app.component('InputText', InputText);
+app.component('InputGroup', InputGroup);
+app.component('InputGroupAddon', InputGroupAddon);
+app.component('Textarea', Textarea);
+app.component('Divider', Divider);
+app.component('Dialog', Dialog);
+app.component('Card', Card);
+app.component('Chip', Chip);
+app.component('Panel', Panel);
+app.component('Skeleton', Skeleton);
+app.component('Avatar', Avatar);
+app.component('Accordion', Accordion);
+app.component('AccordionPanel', AccordionPanel);
+app.component('AccordionHeader', AccordionHeader);
+app.component('AccordionContent', AccordionContent);
+app.component('Fieldset', Fieldset);
+app.component('SpeedDial', SpeedDial);
+app.component('ConfirmDialog', ConfirmDialog);
+
+app.component('Toast', Toast);
 app.use(ToastService);
+app.use(ConfirmationService);
 
-app.component("Button", Button);
-app.component("Toolbar", Toolbar);
-app.component("Avatar", Avatar);
-app.component("Card", Card);
-app.component("InputSwitch", InputSwitch);
-app.component("InputText", InputText);
-app.component("RadioButton", RadioButton);
-app.component("Textarea", Textarea);
-app.component("Listbox", Listbox);
-app.component("Dialog", Dialog);
-app.component("SpeedDial", SpeedDial);
-app.component("Toast", Toast);
-app.component("ProgressBar", ProgressBar);
-// app.component("Sidebar", Sidebar);
 
-app.directive("tooltip", Tooltip);
+app.directive('tooltip', Tooltip);
 
-app.mount("#app");
+app.mount('#app')
