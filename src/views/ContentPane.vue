@@ -13,11 +13,12 @@ import {
   postResource,
   getLocationHeader,
 } from "@uvdsl/solid-requests";
+import { AccessRequestGenerator, AccessMode } from "@uvdsl/solid-access-requests";
 
 
 const toast = useToast();
 const confirm = useConfirm();
-const { session } = useSolidSession();
+const { session, state } = useSolidSession();
 
 // uri of the information resource
 const uri = ref("");
@@ -150,6 +151,41 @@ const speedDialActions = [
             life: 5000,
           })
         );
+    },
+  },
+  {
+    label: "Draft Access Request",
+    icon: "pi pi-ticket",
+    command: () => {
+      const recipient = new URL("/profile/card#me", uri.value).href; // cheap guess
+      const request = new AccessRequestGenerator({
+        requester: state.webId!,
+        recipient,
+        grantee: state.webId!,
+        purpose: 'https://example.org/test',
+        context: 'https://example.org/test'
+      });
+
+      // 2. Add a REQUIRED bundle (User MUST grant these to proceed)
+      request.addRequiredGroup([
+        {
+          instanceUri: uri.value,
+          modes: [AccessMode.Read]
+        },
+      ]);
+
+      // 3. Add an OPTIONAL bundle (User can choose to reject these)
+      request.addOptionalGroup([
+        {
+          instanceUri: uri.value,
+          modes: [AccessMode.Write]
+        }
+      ]);
+
+      // 4. Generate the request body in Turtle serialisation
+      const requestBody = request.toTTL();
+      content.value = requestBody;
+      uri.value = new URL("/inbox/", uri.value).href; // cheap guess
     },
   },
   {
