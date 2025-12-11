@@ -226,9 +226,10 @@ const speedDialActions = [
 
   <div class="speeddial-container">
     <SpeedDial :model="speedDialActions" type="semi-circle" :radius="75" showIcon="pi pi-ellipsis-h"
-      :tooltipOptions="{ position: 'top'} as any" class="centered-speeddial" :buttonProps="{ class: 'p-button-lg shadow-4' }">
+      class="centered-speeddial" :buttonProps="{ class: 'p-button-lg shadow-4' }">
       <template #item="{ item }">
-        <Button :icon="item.icon" :severity="item.severity" @click="item.command as any" class="p-speeddial-action" rounded />
+        <Button :icon="item.icon" v-tooltip.top="item.label" :severity="item.severity" @click="item.command as any"
+          class="p-speeddial-action" rounded />
       </template>
     </SpeedDial>
   </div>
