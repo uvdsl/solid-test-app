@@ -10,6 +10,7 @@ import 'primeflex/primeflex.css';
 
 import Button from "primevue/button";
 import SelectButton from 'primevue/selectbutton';
+import SplitButton from 'primevue/splitbutton';
 import Checkbox from 'primevue/checkbox';
 import InputText from 'primevue/inputtext';
 import InputGroup from 'primevue/inputgroup';
@@ -81,6 +82,7 @@ app.use(PrimeVue, {
 });
 app.component('Button', Button);
 app.component('SelectButton', SelectButton);
+app.component('SplitButton', SplitButton);
 app.component('Checkbox', Checkbox);
 app.component('InputText', InputText);
 app.component('InputGroup', InputGroup);

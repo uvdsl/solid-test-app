@@ -10,8 +10,10 @@ import {
   deleteResource,
   getResource,
   parseToN3,
-  postResource,
+  createContainer,
   getLocationHeader,
+  patchResource,
+  postResource,
 } from "@uvdsl/solid-requests";
 import { AccessRequestGenerator, AccessMode } from "@uvdsl/solid-access-requests";
 
@@ -26,6 +28,9 @@ const isHTTP = computed(
   () => uri.value.startsWith("http://") || uri.value.startsWith("https://")
 );
 
+// media-type
+const mediaType = ref("");
+
 // content of the information resource
 const content = ref("");
 
@@ -34,7 +39,7 @@ const fetch = async () => {
   if (!isHTTP.value) {
     return;
   }
-  const txt = await getResource(uri.value, session)
+  content.value = await getResource(uri.value, session, { "Accept": mediaType.value })
     .catch((err) => {
       toast.add({
         severity: "error",
@@ -44,25 +49,16 @@ const fetch = async () => {
       });
       throw new Error(err);
     })
-    .then((resp) => resp.text());
-  //   const parsedN3 =
-  await parseToN3(txt, uri.value.split("__0x")[0])
-    .catch((err) => {
-      toast.add({
-        severity: "error",
-        summary: "Error!",
-        detail: err,
-        life: 5000,
-      });
-      //   throw new Error(err);
-    })
-    .finally(() => (content.value = txt));
+    .then((resp) => {
+      mediaType.value = resp.headers.get("content-type") || "";
+      return resp.text()
+    });
 };
 
-// Speeddial
-const speedDialActions = [
+// SplitButton
+const splitButtonActions = [
   {
-    label: "PUT Resource",
+    label: "PUT",
     icon: "pi pi-save",
     tooltipOptions: "left",
     command: async () => {
@@ -75,7 +71,16 @@ const speedDialActions = [
         });
         return;
       }
-      putResource(uri.value, content.value, session)
+      if (!mediaType.value) {
+        toast.add({
+          severity: "error",
+          summary: "Missing media-type!",
+          detail: "Specify a media-type in the search bar.",
+          life: 5000,
+        });
+        return;
+      }
+      putResource(uri.value, content.value, session, { "Content-Type": mediaType.value })
         .then(() =>
           toast.add({
             severity: "success",
@@ -95,7 +100,52 @@ const speedDialActions = [
     },
   },
   {
-    label: "POST Resource",
+    label: "PATCH",
+    icon: "pi pi-bolt",
+    tooltipOptions: "left",
+    command: async () => {
+      if (!isHTTP.value) {
+        toast.add({
+          severity: "error",
+          summary: "Missing URI to patch!",
+          detail: "Specify a HTTP-URI in the search bar.",
+          life: 5000,
+        });
+        return;
+      }
+      if (mediaType.value && mediaType.value !== "text/n3") {
+        toast.add({
+          severity: "error",
+          summary: "PATCH media-type!",
+          detail: "Media-type must be `text/n3` (or empty).",
+          life: 5000,
+        });
+        return;
+      }
+      patchResource(uri.value, content.value, session)
+        .then(() =>
+          toast.add({
+            severity: "success",
+            summary: "Successful Save!",
+            detail: "The resource has been patched.",
+            life: 5000,
+          })
+        )
+        .catch((err) =>
+          toast.add({
+            severity: "error",
+            summary: "Error on save!",
+            detail: err,
+            life: 5000,
+          })
+        );
+    },
+  },
+  {
+    separator: true
+  },
+   {
+    label: "POST (to create Resource)",
     icon: "pi pi-envelope",
     tooltipOptions: "left",
     command: async () => {
@@ -108,7 +158,16 @@ const speedDialActions = [
         });
         return;
       }
-      postResource(uri.value, content.value, session)
+      if (!mediaType.value) {
+        toast.add({
+          severity: "error",
+          summary: "Missing media-type!",
+          detail: "Specify a media-type in the search bar.",
+          life: 5000,
+        });
+        return;
+      }
+      postResource(uri.value, content.value, session, {"Content-Type":mediaType.value})
         .then(resp => getLocationHeader(resp))
         .then(loc => content.value = `Location: ${loc}`)
         .then(() =>
@@ -129,6 +188,110 @@ const speedDialActions = [
         );
     },
   },
+  {
+    label: "POST (to create Container)",
+    icon: "pi pi-envelope",
+    tooltipOptions: "left",
+    command: async () => {
+      if (!isHTTP.value) {
+        toast.add({
+          severity: "error",
+          summary: "Missing URI to save at!",
+          detail: "Specify a HTTP-URI in the search bar.",
+          life: 5000,
+        });
+        return;
+      }
+      if (mediaType.value) {
+        toast.add({
+          severity: "error",
+          summary: "Missing media-type!",
+          detail: "Specify a media-type in the search bar.",
+          life: 5000,
+        });
+        return;
+      }
+      createContainer(uri.value, content.value, session)
+        .then(resp => getLocationHeader(resp))
+        .then(loc => content.value = `Location: ${loc}`)
+        .then(() =>
+          toast.add({
+            severity: "success",
+            summary: "Successful Save!",
+            detail: "The resource has been posted to the container URI.",
+            life: 5000,
+          })
+        )
+        .catch((err) =>
+          toast.add({
+            severity: "error",
+            summary: "Error on save!",
+            detail: err,
+            life: 5000,
+          })
+        );
+    },
+  },
+  {
+    separator: true
+  },
+  {
+    label: "DELETE",
+    icon: "pi pi-trash",
+    severity: "danger",
+    command: () => {
+      confirm.require({
+        message: `Delete <${uri.value}> ?`,
+        header: 'Danger Zone',
+        icon: 'pi pi-question-circle',
+        rejectLabel: 'Cancel',
+        rejectProps: {
+          label: 'Cancel',
+          severity: 'secondary',
+          outlined: true
+        },
+        acceptProps: {
+          label: 'Delete',
+          severity: 'danger'
+        },
+        accept: () => {
+          if (!isHTTP.value) {
+            toast.add({
+              severity: "error",
+              summary: "Missing URI to delete!",
+              detail: "Specify a HTTP-URI in the search bar.",
+              life: 5000,
+            });
+            return;
+          }
+          deleteResource(uri.value, session)
+            .then(() =>
+              toast.add({
+                severity: "success",
+                summary: "Successful Delete!",
+                detail: "The resource has been deleted.",
+                life: 5000,
+              })
+            )
+            .catch((err) =>
+              toast.add({
+                severity: "error",
+                summary: "Error on delete!",
+                detail: err,
+                life: 5000,
+              })
+            );
+        },
+        reject: () => {
+          // toast.add({ severity: 'info', summary: 'ACK', detail: 'Nothing happened.', life: 3000 });
+        }
+      });
+    },
+  },
+];
+
+// Speeddial
+const speedDialActions = [
   {
     label: "Check Syntax",
     icon: "pi pi-code",
@@ -187,60 +350,7 @@ const speedDialActions = [
       content.value = requestBody;
       uri.value = new URL("/inbox/", uri.value).href; // cheap guess
     },
-  },
-  {
-    label: "Delete Resource",
-    icon: "pi pi-trash",
-    severity: "danger",
-    command: () => {
-      confirm.require({
-        message: `Delete <${uri.value}> ?`,
-        header: 'Danger Zone',
-        icon: 'pi pi-question-circle',
-        rejectLabel: 'Cancel',
-        rejectProps: {
-          label: 'Cancel',
-          severity: 'secondary',
-          outlined: true
-        },
-        acceptProps: {
-          label: 'Delete',
-          severity: 'danger'
-        },
-        accept: () => {
-          if (!isHTTP.value) {
-            toast.add({
-              severity: "error",
-              summary: "Missing URI to delete!",
-              detail: "Specify a HTTP-URI in the search bar.",
-              life: 5000,
-            });
-            return;
-          }
-          deleteResource(uri.value, session)
-            .then(() =>
-              toast.add({
-                severity: "success",
-                summary: "Successful Delete!",
-                detail: "The resource has been deleted.",
-                life: 5000,
-              })
-            )
-            .catch((err) =>
-              toast.add({
-                severity: "error",
-                summary: "Error on delete!",
-                detail: err,
-                life: 5000,
-              })
-            );
-        },
-        reject: () => {
-          // toast.add({ severity: 'info', summary: 'ACK', detail: 'Nothing happened.', life: 3000 });
-        }
-      });
-    },
-  },
+  }
 ];
 </script>
 
@@ -249,9 +359,9 @@ const speedDialActions = [
 
     <div class="p-col-12 mb-3">
       <InputGroup class="shadow-2">
-        <InputText placeholder="The URI of the Resource to do actions on." v-model="uri" @keyup.enter="fetch"
-          class="p-inputtext-lg" />
-        <Button label="GET" @click="fetch" class="p-button-lg" />
+        <InputText placeholder="URI" v-model="uri" @keyup.enter="fetch" class="p-inputtext-lg" style="flex:3" />
+        <InputText placeholder="media-type" v-model="mediaType" @keyup.enter="fetch" class="p-inputtext-lg" style="flex:1" />
+        <SplitButton label="GET" @click="fetch" :model="splitButtonActions" />
       </InputGroup>
     </div>
 
@@ -261,11 +371,9 @@ const speedDialActions = [
   </div>
 
   <div class="speeddial-container">
-    <SpeedDial :model="speedDialActions" type="semi-circle" :radius="75" showIcon="pi pi-ellipsis-h"
-      class="centered-speeddial" :buttonProps="{ class: 'p-button-lg shadow-4' }">
+    <SpeedDial :model="speedDialActions" type="semi-circle" :radius="75" showIcon="pi pi-ellipsis-h" class="centered-speeddial" :buttonProps="{ class: 'p-button-lg shadow-4' }">
       <template #item="{ item }">
-        <Button :icon="item.icon" v-tooltip.top="item.label" :severity="item.severity" @click="item.command as any"
-          class="p-speeddial-action" rounded />
+        <Button :icon="item.icon" v-tooltip.top="item.label" :severity="item.severity" @click="item.command as any" class="p-speeddial-action" rounded />
       </template>
     </SpeedDial>
   </div>
@@ -296,6 +404,11 @@ const speedDialActions = [
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
+  }
+
+  .p-splitbutton-button {
+    border-top-left-radius: 0pt;
+    border-bottom-left-radius: 0pt
   }
 }
 </style>
